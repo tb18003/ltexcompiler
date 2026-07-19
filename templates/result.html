@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compilation Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container result-container">
+        <header>
+            <h1>
+                {% if success %}
+                    Compilation Successful 🎉
+                {% elif has_pdf %}
+                    Compiled with Warnings ⚠️
+                {% else %}
+                    Compilation Failed ❌
+                {% endif %}
+            </h1>
+            <p>
+                {% if success %}
+                    Your document compiled perfectly with zero errors.
+                {% elif has_pdf %}
+                    Your document was generated, but there were some warnings or non-fatal errors.
+                {% else %}
+                    The compiler encountered fatal errors and could not generate a PDF.
+                {% endif %}
+            </p>
+        </header>
+
+        <div class="actions">
+            {% if has_pdf %}
+            <div class="download-group">
+                <a href="{{ url_for('download_pdf', job_id=job_id) }}" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download PDF
+                </a>
+                <p class="expiry-note">Available for the next 10 minutes.</p>
+            </div>
+            {% endif %}
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Compile Another</a>
+        </div>
+
+        {% if not success %}
+        <div class="logs-section">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('errors', event)">Errors <span class="badge badge-error">{{ errors|length }}</span></button>
+                <button class="tab-btn" onclick="showTab('warnings', event)">Warnings <span class="badge badge-warning">{{ warnings|length }}</span></button>
+                <button class="tab-btn" onclick="showTab('infos', event)">Info <span class="badge badge-info">{{ infos|length }}</span></button>
+                <button class="tab-btn" onclick="showTab('raw', event)">Raw Log</button>
+            </div>
+
+            <div class="tab-content active" id="tab-errors">
+                {% if errors %}
+                    {% for error in errors %}
+                        <pre class="log-block error-block">{{ error }}</pre>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">No errors found.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-content" id="tab-warnings">
+                {% if warnings %}
+                    {% for warning in warnings %}
+                        <pre class="log-block warning-block">{{ warning }}</pre>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">No warnings found.</p>
+                {% endif %}
+            </div>
+            
+            <div class="tab-content" id="tab-infos">
+                {% if infos %}
+                    {% for info in infos %}
+                        <pre class="log-block info-block">{{ info }}</pre>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">No info logs found.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-content" id="tab-raw">
+                <pre class="log-block raw-log">{{ raw_log }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showTab(tabName, event) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove active from all tabs
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show selected content
+            document.getElementById('tab-' + tabName).classList.add('active');
+            // Set active tab
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
