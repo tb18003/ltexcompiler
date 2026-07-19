@@ -72,7 +72,7 @@ def compile_latex():
         work_dir = main_tex.parent
         cmd = ['latexmk', '-pdf', '-interaction=nonstopmode', main_tex.name]
         try:
-            process = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True)
+            process = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True, errors='replace')
             
             if process.returncode != 0:
                 error_log = process.stdout + '\n' + process.stderr
