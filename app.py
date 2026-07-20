@@ -165,7 +165,7 @@ def compile_latex():
             return redirect(url_for('index'))
 
         work_dir = main_tex.parent
-        cmd = ['latexmk', '-pdf', '-f', '-interaction=nonstopmode', main_tex.name]
+        cmd = ['latexmk', '-pdf', '-f', '-interaction=nonstopmode', '-shell-escape', main_tex.name]
         try:
             process = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True, errors='replace')
             
