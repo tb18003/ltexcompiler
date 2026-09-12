@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import tempfile
 import zipfile
@@ -8,13 +9,21 @@ import uuid
 import re
 import unicodedata
 import logging
+import gc
 from pathlib import Path
 from flask import Flask, request, render_template, send_from_directory, flash, redirect, url_for, Response
+
+# Ensure logs flush immediately to stdout/stderr without buffering (critical for Google Cloud Run / Docker)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(line_buffering=True)
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(line_buffering=True)
 
 # Setup structured logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] [%(name)s] %(message)s'
+    format='%(asctime)s [%(levelname)s] [%(name)s] %(message)s',
+    stream=sys.stdout
 )
 logger = logging.getLogger('ltexcompiler')
 
@@ -226,6 +235,11 @@ def compile_latex():
                         continue
                     zip_ref.extract(member, temp_dir)
             logger.info("Successfully extracted zip contents into %s", temp_dir)
+            # Remove uploaded zip immediately to save RAM in Cloud Run (tmpfs)
+            try:
+                os.remove(zip_path)
+            except Exception:
+                pass
         except zipfile.BadZipFile:
             logger.error("Uploaded file is not a valid ZIP: %s", file.filename)
             flash('El archivo subido no es un archivo ZIP válido o está dañado.')
@@ -313,6 +327,7 @@ def compile_latex():
             
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+        gc.collect()
 
 @app.route('/download/<job_id>')
 def download_pdf(job_id):
@@ -323,4 +338,12 @@ def download_pdf(job_id):
     return send_from_directory(OUTPUT_DIR, f"{job_id}.pdf", as_attachment=True, download_name='document.pdf')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '0.0.0.0')
+    try:
+        from waitress import serve
+        logger.info("Iniciando servidor de producción WSGI (Waitress) en http://%s:%d", host, port)
+        serve(app, host=host, port=port, channel_timeout=300)
+    except ImportError:
+        logger.warning("Waitress no está instalado. Iniciando servidor en modo producción en http://%s:%d", host, port)
+        app.run(debug=False, port=port, host=host, threaded=True)
