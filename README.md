@@ -36,5 +36,13 @@ A Python web application that allows you to upload a ZIP file containing a LaTeX
 1. The app receives the ZIP upload and extracts it to an isolated temporary directory.
 2. It intelligently finds the main `.tex` file.
 3. It runs `latexmk -pdf` to compile the document (handling bibliographies, cross-references, and multiple passes automatically).
-4. Returns the generated PDF directly to your browser for download.
-5. Cleans up all temporary files immediately.
+4. Shows the result page with the parsed compiler log, where the generated PDF can be:
+   - **Previewed** in the browser's built-in PDF viewer (`/view/<job_id>`, served inline, no download needed).
+   - **Downloaded** as `document.pdf` (`/download/<job_id>`).
+5. Removes the extracted project immediately; the generated PDF is kept for 10 minutes and then deleted.
+
+## Running the tests
+
+```bash
+python -m unittest -v
+```

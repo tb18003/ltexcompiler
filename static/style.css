@@ -207,6 +207,13 @@ header p {
     gap: 0.5rem;
 }
 
+.pdf-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
 .expiry-note {
     font-size: 0.8rem;
     color: var(--text-muted);
